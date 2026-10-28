@@ -1313,76 +1313,107 @@
             return clone.innerText || clone.textContent;
         }
 
-        function playSection(sectionId) {
-            const text = getSectionText(sectionId);
-            if (!text.trim()) return;
-            
-            stopAllSections();
-            
-            currentUtterance = new SpeechSynthesisUtterance(text);
-            currentSection = sectionId;
-            isPaused = false;
-            
-            const rateInput = document.getElementById('speech-rate-' + sectionId);
-            if (rateInput) {
-                currentUtterance.rate = parseFloat(rateInput.value);
+        let speechQueue = [];
+        let speechToken = 0;
+
+        function splitIntoChunks(text, maxLen = 180) {
+            const sentences = text.replace(/\s+/g, ' ').match(/[^.!?;:\n]+[.!?;:]?/g) || [text];
+            const chunks = [];
+            let buffer = '';
+            sentences.forEach(s => {
+                s = s.trim();
+                if (!s) return;
+                if ((buffer + ' ' + s).length > maxLen && buffer) {
+                    chunks.push(buffer);
+                    buffer = s;
+                } else {
+                    buffer = buffer ? buffer + ' ' + s : s;
+                }
+            });
+            if (buffer) chunks.push(buffer);
+            return chunks;
+        }
+
+        function speakNextChunk(token, rate) {
+            if (token !== speechToken) return;
+            if (speechQueue.length === 0) {
+                finishSpeech();
+                return;
             }
-            
-            currentUtterance.lang = 'es-ES';
-            synth.speak(currentUtterance);
-            
-            currentUtterance.onend = function() {
-                currentUtterance = null;
-                currentSection = null;
+            const utter = new SpeechSynthesisUtterance(speechQueue.shift());
+            utter.lang = 'es-ES';
+            utter.rate = rate;
+            const esVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+            if (esVoice) utter.voice = esVoice;
+            utter.onend = () => speakNextChunk(token, rate);
+            utter.onerror = (e) => {
+                if (e.error !== 'interrupted' && e.error !== 'canceled') speakNextChunk(token, rate);
             };
-            
-            updatePlayButtons(sectionId, true);
+            currentUtterance = utter;
+            synth.speak(utter);
         }
 
-        function pauseSection() {
-            if (synth.speaking && !synth.paused) {
-                synth.pause();
-                isPaused = true;
-            }
-        }
-
-        function resumeSection() {
-            if (synth.paused) {
-                synth.resume();
-                isPaused = false;
-            }
-        }
-
-        function stopAllSections() {
-            if (synth.speaking) {
-                synth.cancel();
-            }
+        function finishSpeech() {
             currentUtterance = null;
             currentSection = null;
             isPaused = false;
-            
-            document.querySelectorAll('.play-btn').forEach(btn => {
-                btn.disabled = false;
-            });
-            document.querySelectorAll('.pause-btn').forEach(btn => {
-                btn.disabled = true;
-            });
-            document.querySelectorAll('.stop-btn').forEach(btn => {
-                btn.disabled = true;
-            });
+            speechQueue = [];
+            updatePlayButtons(null, false);
+        }
+
+        function playSection(sectionId) {
+            const text = getSectionText(sectionId);
+            if (!text.trim()) return;
+
+            stopAllSections();
+
+            const rateInput = document.getElementById('speech-rate-' + sectionId);
+            const rate = rateInput ? parseFloat(rateInput.value) : 1;
+
+            currentSection = sectionId;
+            isPaused = false;
+            speechQueue = splitIntoChunks(text);
+            speechToken++;
+            updatePlayButtons(sectionId, true);
+            speakNextChunk(speechToken, rate);
+        }
+
+        function pauseSection() {
+            if (!currentSection || isPaused) return;
+            synth.pause();
+            isPaused = true;
+            updatePlayButtons(currentSection, true);
+        }
+
+        function resumeSection() {
+            if (!currentSection || !isPaused) return;
+            synth.resume();
+            isPaused = false;
+            updatePlayButtons(currentSection, true);
+        }
+
+        function stopAllSections() {
+            speechToken++;
+            speechQueue = [];
+            synth.cancel();
+            finishSpeech();
         }
 
         function updatePlayButtons(sectionId, isPlaying) {
-            const control = document.querySelector(`[data-target="${sectionId}"]`);
-            if (control) {
+            document.querySelectorAll('.speech-controls').forEach(control => {
+                const active = isPlaying && control.getAttribute('data-target') === sectionId;
                 const playBtn = control.querySelector('.play-btn');
                 const pauseBtn = control.querySelector('.pause-btn');
                 const stopBtn = control.querySelector('.stop-btn');
-                
-                if (playBtn) playBtn.disabled = isPlaying;
-                if (pauseBtn) pauseBtn.disabled = !isPlaying;
-                if (stopBtn) stopBtn.disabled = !isPlaying;
-            }
+                if (playBtn) playBtn.disabled = active && !isPaused;
+                if (pauseBtn) {
+                    pauseBtn.disabled = !active;
+                    pauseBtn.innerHTML = active && isPaused
+                        ? '<span class="mr-1">▶️</span> Reanudar'
+                        : '<span class="mr-1">⏸️</span> Pausar';
+                }
+                if (stopBtn) stopBtn.disabled = !active;
+            });
         }
 
         // Navegación entre secciones y demás funcionalidades
@@ -1441,7 +1472,7 @@
                 
                 if (playBtn) {
                     playBtn.addEventListener('click', () => {
-                        if (isPaused) {
+                        if (isPaused && currentSection === sectionId) {
                             resumeSection();
                         } else {
                             playSection(sectionId);
@@ -1450,7 +1481,13 @@
                 }
                 
                 if (pauseBtn) {
-                    pauseBtn.addEventListener('click', pauseSection);
+                    pauseBtn.addEventListener('click', () => {
+                        if (isPaused) {
+                            resumeSection();
+                        } else {
+                            pauseSection();
+                        }
+                    });
                 }
                 
                 if (stopBtn) {
@@ -1458,9 +1495,8 @@
                 }
                 
                 if (rateInput) {
-                    rateInput.addEventListener('input', function() {
-                        if (currentUtterance && currentSection === sectionId) {
-                            synth.cancel();
+                    rateInput.addEventListener('change', function() {
+                        if (currentSection === sectionId) {
                             playSection(sectionId);
                         }
                     });
@@ -1692,16 +1728,18 @@
             
             // Atajos de teclado
             document.addEventListener('keydown', function(e) {
+                if (e.target.matches('input, select, textarea, button')) return;
                 if (e.code === 'Space') {
                     e.preventDefault();
                     if (isPaused) {
                         resumeSection();
-                    } else if (synth.speaking) {
-                        pauseSection();
                     } else if (currentSection) {
-                        playSection(currentSection);
+                        pauseSection();
+                    } else {
+                        const activePane = document.querySelector('.content-pane.active');
+                        if (activePane) playSection(activePane.id);
                     }
-                } else if (e.code === 'Tab') {
+                } else if (e.code === 'Tab' && currentSection) {
                     e.preventDefault();
                     stopAllSections();
                 }
