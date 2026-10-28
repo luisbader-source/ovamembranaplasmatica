@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OVA: Membrana Plasmática - Agronomía</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Verdes y Blancos Institucionales -->
+    <!-- Application Structure Plan: Se diseña un Objeto Virtual de Aprendizaje (OVA) con una disposición de dos columnas. Un menú lateral fijo a la izquierda permite la navegación entre las secciones pedagógicas (Introducción, Objetivos, etc.). El área de contenido principal a la derecha se actualiza dinámicamente con JavaScript para mostrar la sección seleccionada. Esta estructura es ideal para un aprendizaje guiado y organizado, permitiendo al usuario explorar el contenido de forma secuencial o no lineal. -->
+    <!-- Visualization & Content Choices: 1. Navegación -> Menú lateral con estado activo (HTML/JS) y ahora con iconos para mejorar la usabilidad. Justificación: Estructura clásica y efectiva para un OVA. 2. Fundamentos Teóricos -> Contenido textual con tarjetas destacadas con iconos. Justificación: Facilita la lectura y resalta conceptos clave. 3. Actividades Prácticas -> Cuestionario interactivo. Justificación: Fomenta la participación activa. 4. Evaluación -> Quiz de opción múltiple con retroalimentación. Justificación: Permite la autoevaluación del aprendizaje. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .sidebar-link {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .sidebar-link.active, .sidebar-link:hover {
+            background-color: #e6f4ea;
+            color: #166534; /* green-800 */
+            border-left-color: #22c55e; /* green-500 */
+        }
+        .content-pane {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            clear: both;
+        }
+        .content-pane.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .quiz-option:hover {
+            background-color: #f0fdf4; /* green-50 */
+        }
+        .quiz-option.selected {
+            background-color: #dcfce7; /* green-100 */
+            border-color: #22c55e; /* green-500 */
+        }
+        .type-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .type-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        
+        /* Estilos para el popup de imágenes */
+        .image-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .expand-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(34, 197, 94, 0.8); /* green-500 con transparencia */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            z-index: 10;
+        }
+        
+        /* En dispositivos móviles, mostrar siempre el botón */
+        @media (max-width: 768px) {
+            .expand-btn {
+                opacity: 0.9;
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+                background-color: rgba(34, 197, 94, 0.9);
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+                animation: pulse 2s infinite;
+            }
+        }
+        
+        .image-container:hover .expand-btn {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .image-modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+        
+        .modal-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            border: 4px solid white;
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Optimizaciones para dispositivos móviles */
+        @media (max-width: 768px) {
+            .modal-content {
+                max-width: 90%;
+                animation: slideUpFade 0.3s ease-out;
+                margin-right: 15px; /* Dar más espacio para el botón de cierre */
+            }
+            
+            .modal-content img {
+                border-width: 2px;
+            }
+            
+            .close-modal {
+                top: 10px;
+                right: 10px;
+                width: 36px;
+                height: 36px;
+                position: absolute;
+                z-index: 1010; /* Asegurar que esté por encima de todo */
+            }
+        }
+        
+        /* Animación especial para móviles */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            background-color: #ef4444; /* red-500 */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:flex md:flex-col">
+            <div class="p-4">
+                <div style="width: 220px; height: 220px; box-sizing: border-box;" class="mx-auto flex items-center justify-center bg-white rounded-full shadow-lg border border-green-500 transition-shadow duration-400 hover:shadow-green-500 overflow-hidden">
+                    <img src="img/logobio.jpg.png" alt="Logo OVA" style="width: 100%; height: 100%; object-fit: cover; object-position: center; margin: 0; padding: 0; display: block;" loading="lazy">
+                </div>
+            </div>
+            <nav class="mt-6 flex-1">
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="introduccion"><span class="mr-3 text-xl">🚀</span> Introducción</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="objetivos"><span class="mr-3 text-xl">🎯</span> Objetivos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="contenido"><span class="mr-3 text-xl">📚</span> Contenido</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="actividades"><span class="mr-3 text-xl">✍️</span> Actividades</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="juegos"><span class="mr-3 text-xl">🎮</span> Juegos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="evaluacion"><span class="mr-3 text-xl">✔️</span> Evaluación</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="recursos"><span class="mr-3 text-xl">📖</span> Recursos</a>
+                <a href="#" class="sidebar-link flex items-center py-3 px-6 font-medium text-slate-700" data-target="bibliografia"><span class="mr-3 text-xl">📚</span> Bibliografía</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-4 sm:p-6 md:p-10 bg-gray-50 relative">
+            <!-- Mobile Header -->
+            <div class="md:hidden mb-6 flex flex-col items-center">
+                <div style="width: 100px; height: 100px;" class="p-2 flex items-center justify-center bg-white rounded-full shadow-lg transition-shadow duration-300 hover:shadow-green-400 mb-2">
+                    <img src="img/portada1.png" alt="Logo OVA" class="w-5/6 h-5/6 object-contain" loading="lazy">
+                </div>
+                 <select id="mobile-nav" class="w-full mt-2 p-2 border rounded-md bg-white shadow-sm">
+                    <option value="introduccion">🚀 Introducción</option>
+                    <option value="objetivos">🎯 Objetivos</option>
+                    <option value="contenido">📚 Contenido</option>
+                    <option value="actividades">✍️ Actividades Prácticas</option>
+                    <option value="juegos">🎮 Juegos</option>
+                    <option value="evaluacion">✔️ Evaluación</option>
+                    <option value="recursos">📖 Recursos</option>
+                        <option value="bibliografia">📚 Bibliografía</option>
+                </select>
+            </div>
+
+
+
+          <!-- Introducción -->
+            <div id="introduccion" class="content-pane active">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-4">MEMBRANA PLASMÁTICA</h2>
+                <h3 class="text-xl sm:text-2xl font-semibold text-green-700 mb-4">Estructura, transporte, ósmosis y aplicaciones biotecnológicas en Agronomía</h3>
+                <div class="mt-4 mb-6 p-4 bg-white border border-green-300 rounded-lg shadow-sm flex flex-col items-center">
+                    <div class="w-full h-32 sm:h-48 md:h-64 xl:h-80 bg-white rounded flex items-center justify-center overflow-hidden image-container">
+                        <img src="img/Membrana celular en acción (1).png" alt="Membrana plasmática" class="max-w-full max-h-full object-contain" loading="lazy"/>
+                        <button class="expand-btn" data-img="img/Imagen1.png">🔍</button>
+                    </div>
+                </div>
+
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    La membrana plasmática es el límite dinámico que separa el interior de la célula del medio externo. No es una envoltura pasiva: regula el intercambio de agua, iones, nutrientes y desechos; recibe señales; organiza proteínas y participa en la respuesta de la planta a las condiciones del suelo y del ambiente. En una célula vegetal, su funcionamiento se articula con la pared celular, la vacuola, el citoplasma y los sistemas de transporte que sostienen la turgencia, la nutrición mineral y el crecimiento.
+                </p>
+
+                <p class="text-lg text-slate-700 leading-relaxed mb-4">
+                    Para la Agronomía, estudiar la membrana plasmática permite interpretar fenómenos que ocurren en el campo: marchitez por déficit hídrico, plasmólisis por exceso de sales, absorción de nutrientes, toxicidad por aluminio en suelos ácidos y tolerancia de los cultivos a la salinidad. También permite comprender cómo la biotecnología utiliza genes y proteínas transportadoras para desarrollar variedades más resistentes.
+                </p>
+
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                    <h4 class="font-bold text-blue-800 mb-2">📌 Pregunta orientadora</h4>
+                    <p class="text-slate-700">¿Cómo regula la membrana plasmática la entrada y salida de agua y nutrientes, y de qué manera contribuye a la supervivencia de las plantas en suelos salinos o ácidos?</p>
+                </div>
+
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="introduccion">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-introduccion" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-introduccion" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+
+                <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                    <strong>💡 Atajos de teclado:</strong> Presiona <kbd class="bg-white px-2 py-1 rounded border">Espacio</kbd> para reproducir/pausar, <kbd class="bg-white px-2 py-1 rounded border">Tab</kbd> para detener
+                </div>
+            </div>
+
+            <!-- Objetivos -->
+            <div id="objetivos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Objetivos de aprendizaje</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="objetivos">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-objetivos" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-objetivos" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                <p class="text-slate-700 mb-4">Al finalizar esta OVA, el estudiante estará en capacidad de:</p>
+                <ul class="space-y-4">
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🧠</span>
+                        <span>Explicar qué es la membrana plasmática y relacionar su función con la homeostasis de la célula vegetal..</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🔍</span>
+                        <span>Identificar los componentes del modelo del mosaico fluido: fosfolípidos, colesterol y otros lípidos, proteínas integrales y periféricas, y carbohidratos asociados.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">📉</span>
+                        <span>Distinguir transporte pasivo, difusión simple, difusión facilitada, ósmosis y transporte activo, indicando el papel del gradiente y de la energía celular.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🔬</span>
+                        <span>Analizar cómo la turgencia, la plasmólisis y el movimiento de solutos afectan el establecimiento y el rendimiento de los cultivos.</span>
+                    </li>
+                    <li class="flex items-start p-4 bg-white rounded-lg shadow-sm">
+                        <span class="text-green-700 mr-3 text-2xl">🌾</span>
+                        <span>Interpretar estudios de caso sobre salinidad, toxicidad por aluminio y déficit hídrico desde la función de los transportadores de membrana.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Fundamentos Teóricos -->
+            <div id="contenido" class="content-pane">
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="contenido">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-contenido" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-contenido" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                <!-- Acordeón de temas -->
+
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-center p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2" data-target="#panel-estructura">
+                            ¿Qué es la membrana plasmática?<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-estructura" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="space-y-6 text-slate-700 leading-relaxed">
+                            <div>
+                                <p class="mb-4">
+                                    También llamada plasmalema, es una membrana biológica continua que delimita la célula y controla su composición química. El libro base la describe como el límite entre el medio intracelular y el extracelular, con permeabilidad selectiva y receptores que permiten la comunicación celular (UAS-DGEP, 2012, pp. 50–51). Su espesor es tan pequeño que se observa con microscopía electrónica y no con microscopía óptica convencional.
+                                    La permeabilidad selectiva significa que el paso de una sustancia depende de su tamaño, carga, polaridad, solubilidad en lípidos, gradiente de concentración y presencia de proteínas específicas. Esta selectividad mantiene condiciones internas compatibles con la respiración, la fotosíntesis, el metabolismo y la división celular.
+
+                                </p>
+                                <div class="image-container my-4">
+                                    <img src="img/visualización por microcoscopia1.png" alt="Membrana Plasmática" class="w-full max-w-2xl mx-auto rounded-lg shadow-md">
+                                    <button class="expand-btn">🔍</button>
+                                </div>
+                                <div>Figura 1. Visualización por Microscopía Electrónica de Transmisión (MET)</div>
+                            </div>
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-green-800 mb-2">Componentes principales:</h4>
+                                <ul class="list-disc ml-6 space-y-2">
+                                    <li><strong>Bicapa de fosfolípidos:</strong> Forma la estructura básica de la membrana. Los fosfolípidos tienen una cabeza hidrofílica (afinidad por el agua) y dos colas hidrofóbicas (repelencia al agua), lo que les permite organizarse en una doble capa.</li>
+                                    <li><strong>Proteínas:</strong> Incrustadas en la bicapa, cumplen funciones específicas como transporte, recepción de señales y catálisis de reacciones.</li>
+                                    <li><strong>Carbohidratos:</strong> Unidos a proteínas (glicoproteínas) o lípidos (glicolípidos) en la superficie externa, participan en el reconocimiento celular.</li>
+                                    <li><strong>Colesterol:</strong> En células animales, ayuda a estabilizar la membrana. En plantas, su función es realizada por otros esteroles como el estigmasterol.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">Modelo del mosaico fluido:</h4>
+                                <p>Propuesto por Singer y Nicolson (1972), describe la membrana como un mosaico dinámico donde los fosfolípidos y proteínas pueden moverse lateralmente, conferiendo flexibilidad y capacidad de adaptación a la célula.</p>
+                            </div>
+                            <div class="image-container my-4">
+                                    <img src="img/estructuraolasmatica2.png" alt="Membrana Plasmática" class="w-full max-w-2xl mx-auto rounded-lg shadow-md">
+                                    <button class="expand-btn">🔍</button>
+                                </div>
+                                <div>Figura 2. Representación didáctica del modelo del mosaico fluido. Elaboración propia a partir de UAS-DGEP (2012, pp. 50–54).</div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-transporte">
+                            Tipos de transporte a través de la membrana<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-transporte" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <p class="mb-4">El transporte a través de la membrana puede clasificarse según el uso de energía y la dirección del movimiento:</p>
+                            
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full bg-white border border-green-300 rounded-lg">
+                                    <thead class="bg-green-100">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-green-800 font-bold">Mecanismo</th>
+                                            <th class="px-4 py-3 text-left text-green-800 font-bold">Usa ATP directamente</th>
+                                            <th class="px-4 py-3 text-left text-green-800 font-bold">Dirección general</th>
+                                            <th class="px-4 py-3 text-left text-green-800 font-bold">Ejemplo agronómico</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-green-200">
+                                        <tr>
+                                            <td class="px-4 py-3">Difusión simple</td>
+                                            <td class="px-4 py-3">No</td>
+                                            <td class="px-4 py-3">A favor del gradiente</td>
+                                            <td class="px-4 py-3">Movimiento de gases como O₂ y CO₂</td>
+                                        </tr>
+                                        <tr class="bg-green-50">
+                                            <td class="px-4 py-3">Difusión facilitada</td>
+                                            <td class="px-4 py-3">No</td>
+                                            <td class="px-4 py-3">A favor del gradiente</td>
+                                            <td class="px-4 py-3">Movimiento de iones o azúcares por proteínas específicas</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3">Ósmosis</td>
+                                            <td class="px-4 py-3">No</td>
+                                            <td class="px-4 py-3">Movimiento neto de agua según gradiente osmótico</td>
+                                            <td class="px-4 py-3">Absorción de agua por la raíz y cambios de turgencia</td>
+                                        </tr>
+                                        <tr class="bg-green-50">
+                                            <td class="px-4 py-3">Transporte activo primario</td>
+                                            <td class="px-4 py-3">Sí</td>
+                                            <td class="px-4 py-3">En contra del gradiente electroquímico</td>
+                                            <td class="px-4 py-3">Bombas de H⁺ que generan fuerza motriz para captar nutrientes</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="px-4 py-3">Transporte activo secundario</td>
+                                            <td class="px-4 py-3">Indirectamente</td>
+                                            <td class="px-4 py-3">Acoplado al gradiente de otro ion</td>
+                                            <td class="px-4 py-3">Cotransporte de nitrato, fosfato o azúcares</td>
+                                        </tr>
+                                        <tr class="bg-green-50">
+                                            <td class="px-4 py-3">Endocitosis/exocitosis</td>
+                                            <td class="px-4 py-3">Sí, de forma indirecta</td>
+                                            <td class="px-4 py-3">Mediante vesículas</td>
+                                            <td class="px-4 py-3">Secreción de compuestos de defensa o comunicación con microorganismos</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-osmosis">
+                            Ósmosis, turgencia y plasmólisis<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-osmosis" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div>
+                                <p class="mb-4">
+                                <strong>Transporte pasivo:</strong>Es el movimiento neto de una sustancia a favor de su gradiente de concentración o electroquímico, sin gasto directo de ATP. El gradiente representa una forma de energía potencial: cuanto mayor es la diferencia entre dos zonas, mayor puede ser la velocidad inicial del movimiento. El tamaño, la temperatura, el área de membrana, el espesor de la barrera y la solubilidad del soluto también influyen (OpenStax, 2018).
+                                   
+                                <div class="image-container my-4">
+                                    <img src="img/Difusiónfacilitada.png" alt="Difusión Facilitada" class="w-full max-w-2xl mx-auto rounded-lg shadow-md">
+                                    <button class="expand-btn">🔍</button>
+                                </div>
+                               <div class="text-sm text-gray-600 mt-2 text-center">Figura 3. Representación de la difusión facilitada. Elaboración propia.</div>
+                               <br>
+
+
+                                    <strong>Ósmosis:</strong> Es el movimiento neto de agua a través de una membrana semipermeable desde una región con mayor disponibilidad de agua hacia otra con menor disponibilidad de agua. En términos prácticos, el agua tiende a desplazarse hacia el lado con mayor concentración efectiva de solutos.La dirección exacta depende de la permeabilidad de la membrana, la concentración de solutos y el potencial hídrico.
+                                </p>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-green-800 mb-2">Solución hipotónica:</h4>
+                                <p class="mb-2">El exterior tiene menor concentración de solutos que el interior; entra agua y la célula vegetal puede aumentar su turgencia.</p>
+                                <p class="text-green-700 font-semibold">Turgencia: presión del contenido celular contra la pared; contribuye al sostén de hojas y tallos herbáceos.</p>
+                               <div class="image-container my-4">
+                                    <img src="img/solución_hipotonica1.png" alt="Difusión Facilitada" class="w-full max-w-2xl mx-auto rounded-lg shadow-md">
+                                    <button class="expand-btn">🔍</button>
+                                </div>
+                               <div class="text-sm text-gray-600 mt-2 text-center">Figura 3. Representación de la difusión facilitada. Elaboración propia.</div>
+                                    <button class="expand-btn">🔍</button>
+                                </div>
+                            
+
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-yellow-800 mb-2">Solución isotónica:</h4>
+                                <p>No hay movimiento neto de agua; la entrada y salida ocurren a velocidades semejantes.</p>
+                            </div>
+
+                            <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-red-800 mb-2">Solución hipertónica:</h4>
+                                <p class="mb-2">El exterior tiene mayor concentración de solutos; sale agua, disminuye la turgencia y puede ocurrir plasmólisis.</p>
+                                <p class="text-red-700 font-semibold">Plasmólisis: retracción del protoplasto por pérdida de agua; si el estrés se prolonga puede afectar fotosíntesis, crecimiento y supervivencia.</p>
+                            </div>
+
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">Aplicación de campo:</h4>
+                                <p>Una solución fertilizante demasiado concentrada puede aumentar la salinidad de la rizosfera. Aunque haya agua en el suelo, el potencial hídrico externo puede ser tan bajo que la raíz tenga dificultad para absorberla. Por eso la dosis, la conductividad eléctrica y el fraccionamiento del riego deben considerarse junto con la nutrición.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-activo">
+                            Transporte activo<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-activo" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div>
+                                <p class="mb-4">
+                                    Es el transporte contra un gradiente y requiere energía. En la célula vegetal, las bombas de protones de la membrana plasmática utilizan ATP para expulsar H⁺. Con ello generan un gradiente eléctrico y químico que puede impulsar la entrada de nitrato, fosfato, sulfato y otros solutos mediante cotransportadores.
+                                </p>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-green-800 mb-2">Transporte activo primario:</h4>
+                                <p>Cuando la proteína usa ATP directamente para mover sustancias contra su gradiente.</p>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg mb-4">
+                                <h4 class="font-bold text-green-800 mb-2">Transporte activo secundario:</h4>
+                                <p>Cuando aprovecha el gradiente producido por otra bomba. Las proteínas transportadoras cambian de conformación para alternar la exposición de su sitio de unión hacia un lado u otro de la membrana.</p>
+                            </div>
+
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">Tipos de transportadores:</h4>
+                                <ul class="list-disc ml-6 space-y-2">
+                                    <li><strong>Uniportadores:</strong> Transportan una sola sustancia en una dirección.</li>
+                                    <li><strong>Simportadores:</strong> Transportan dos o más sustancias en la misma dirección.</li>
+                                    <li><strong>Antiportadores:</strong> Transportan dos sustancias en direcciones opuestas.</li>
+                                </ul>
+                                <p class="mt-3 text-sm text-slate-600">Esta relación explica por qué la respiración y el estado energético de la raíz afectan la absorción de nutrientes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-biotecnologia">
+                            Aplicaciones biotecnológicas: estudios de caso<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-biotecnologia" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-purple-800 mb-2">Caso 1. Transportadores HKT y tolerancia a la salinidad</h4>
+                                <p class="mb-3">La salinidad expone a la planta a dos problemas simultáneos: dificultad para captar agua y toxicidad por Na⁺. Los transportadores HKT participan en el control del sodio y del potasio. En trigo, la incorporación de una variante favorable de HKT1;5 desde un pariente más tolerante aumentó en un 25% el rendimiento de grano en suelo salino en ensayos de campo descritos en la literatura científica.</p>
+                                <p class="text-purple-700 font-semibold">Relevancia agronómica: el caso muestra cómo un componente de membrana puede convertirse en marcador para selección asistida, objetivo de mejoramiento genético y criterio para evaluar germoplasma en ambientes salinos. No reemplaza el manejo del riego y del drenaje, pero puede complementarlo.</p>
+                            </div>
+
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-purple-800 mb-2">Caso 2. TaALMT1 y tolerancia al aluminio en suelos ácidos</h4>
+                                <p class="mb-3">En suelos ácidos, el Al³⁺ puede afectar las raíces y limitar el crecimiento. El gen TaALMT1 codifica un canal activado por aluminio que favorece la salida de malato desde la raíz. El malato puede complejar el aluminio en la zona externa de la raíz y disminuir su toxicidad. La literatura reporta que la expresión de TaALMT1 en cebada mejoró la tolerancia al aluminio y el rendimiento en suelo ácido.</p>
+                                <p class="text-purple-700 font-semibold">Relevancia agronómica: este mecanismo se integra con prácticas como el encalado, el análisis de pH y la selección de variedades adaptadas. La biotecnología aporta una herramienta genética, pero la recomendación debe considerar diagnóstico de suelo y manejo local.</p>
+                            </div>
+
+                            <div class="bg-purple-50 border-l-4 border-purple-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-purple-800 mb-2">Caso 3. Acuaporinas y déficit hídrico</h4>
+                                <p class="mb-3">Las acuaporinas son proteínas de membrana que forman canales selectivos para el agua. Su abundancia y actividad pueden variar según la sequía, la salinidad, la temperatura y el estado de la raíz. Una reducción importante de acuaporinas funcionales disminuye la conductividad hidráulica de la raíz: el agua puede estar presente en el suelo, pero su movimiento hacia el xilema y las hojas se vuelve más limitado.</p>
+                                <p class="text-purple-700 font-semibold">Relevancia agronómica: el estudio de acuaporinas apoya la selección de genotipos con mejor eficiencia en uso del agua y ayuda a interpretar por qué dos cultivares con el mismo riego pueden mostrar distinta marchitez. La respuesta depende de la especie, el tejido y la intensidad del estrés.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-8xl mx-auto">
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-caso">
+                            Caso específico: pérdida de función de un componente de membrana<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-caso" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-orange-800 mb-2">Caso de análisis: pérdida funcional de HKT1;5 en un cultivo sensible a la salinidad</h4>
+                                <p class="mb-3">Si una planta carece de una versión funcional de HKT1;5, o expresa muy poco este transportador, puede retirar menos Na⁺ del flujo del xilema. En consecuencia, más sodio puede llegar a las hojas, acumularse en tejidos fotosintéticos y alterar el balance Na⁺/K⁺. Esto puede manifestarse como clorosis o necrosis marginal, menor expansión foliar, reducción de fotosíntesis y pérdida de rendimiento. El problema no significa que "falte toda la membrana"; falta o funciona mal una proteína específica que regula el transporte iónico.</p>
+                            </div>
+
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">Análisis agronómico del caso:</h4>
+                                <ul class="list-disc ml-6 space-y-2">
+                                    <li><strong>Causa celular:</strong> disminuye la recuperación o exclusión de Na⁺ en tejidos conductores.</li>
+                                    <li><strong>Consecuencia fisiológica:</strong> se altera la homeostasis iónica y el potencial osmótico.</li>
+                                    <li><strong>Indicadores observables:</strong> crecimiento reducido, daño foliar, menor biomasa y menor rendimiento en suelo salino.</li>
+                                    <li><strong>Confirmación:</strong> comparar genotipos en condiciones controladas, medir Na⁺ y K⁺ en raíz y hoja, y analizar la expresión o variante del gen transportador.</li>
+                                    <li><strong>Respuesta de manejo:</strong> mejorar drenaje, controlar la conductividad del agua, seleccionar variedades tolerantes y ajustar la fertilización potásica sin asumir que una sola práctica corrige el problema.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <button type="button" class="w-full flex justify-between items-start p-4 bg-green-100 border border-green-300 rounded-t-lg focus:outline-none font-bold text-green-800 text-lg accordion-btn mb-2 text-left" data-target="#panel-produccion">
+                            Relación de la membrana plasmática con la producción agrícola<span class="ml-2">➕</span>
+                        </button>
+                    </div>
+                    <div id="panel-produccion" class="accordion-panel hidden bg-white border border-t-0 border-green-300 rounded-b-lg p-4 mb-6">
+                        <div class="text-slate-700 leading-relaxed space-y-6">
+                            <p class="mb-4">La membrana plasmática conecta la escala molecular con las decisiones de manejo. Un riego modifica el estado hídrico y la concentración de solutos; una fertilización cambia el gradiente químico de la rizosfera; el pH del suelo modifica la disponibilidad y toxicidad de elementos; y un patógeno puede alterar transportadores o aprovecharlos para obtener azúcares. El agrónomo puede usar esta relación para formular hipótesis, interpretar síntomas y escoger mediciones.</p>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-green-50 border border-green-300 p-4 rounded-lg">
+                                    <h4 class="font-bold text-green-800 mb-2">💧 Riego</h4>
+                                    <p class="text-sm">Evitar alternar déficit severo con encharcamiento; ambos extremos modifican la función de membrana y la respiración radicular.</p>
+                                </div>
+                                <div class="bg-green-50 border border-green-300 p-4 rounded-lg">
+                                    <h4 class="font-bold text-green-800 mb-2">🌱 Fertilización</h4>
+                                    <p class="text-sm">Fraccionar nutrientes y vigilar la conductividad eléctrica para reducir estrés osmótico.</p>
+                                </div>
+                                <div class="bg-green-50 border border-green-300 p-4 rounded-lg">
+                                    <h4 class="font-bold text-green-800 mb-2">🔬 Suelos ácidos</h4>
+                                    <p class="text-sm">Medir pH y aluminio intercambiable; combinar encalado con genotipos tolerantes.</p>
+                                </div>
+                                <div class="bg-green-50 border border-green-300 p-4 rounded-lg">
+                                    <h4 class="font-bold text-green-800 mb-2">🧂 Salinidad</h4>
+                                    <p class="text-sm">Evaluar agua y suelo, asegurar drenaje y escoger variedades con mejor exclusión o compartimentación de Na⁺.</p>
+                                </div>
+                            
+
+                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                <h4 class="font-bold text-blue-800 mb-2">Manejo integrado</h4>
+                                <p>Relacionar síntomas foliares con análisis de tejido, raíz, suelo y agua, en vez de atribuir todo a una sola deficiencia.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- Actividades Prácticas -->
+            <div id="actividades" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Actividades prácticas</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="actividades">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-actividades" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-actividades" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <!-- Actividad 1 -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-4">🧪 Actividad 1: Ósmosis en tejido vegetal</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-green-800 mb-2">Propósito:</h4>
+                                <p class="text-slate-700">Observar cambios de masa y textura en un tejido vegetal expuesto a soluciones con distinta concentración de solutos.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-green-800 mb-2">Materiales:</h4>
+                                <ul class="list-disc ml-6 text-slate-700">
+                                    <li>Trozos iguales de papa o yuca</li>
+                                    <li>Balanza</li>
+                                    <li>Vasos</li>
+                                    <li>Agua</li>
+                                    <li>Soluciones de sal o sacarosa de baja, media y alta concentración</li>
+                                    <li>Toallas de papel y regla</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-green-800 mb-2">Procedimiento:</h4>
+                                <ol class="list-decimal ml-6 text-slate-700">
+                                    <li>Pesar los trozos</li>
+                                    <li>Colocarlos durante 30-45 minutos en las soluciones</li>
+                                    <li>Secar suavemente y volver a pesar</li>
+                                    <li>Registrar masa inicial, masa final, cambio de masa, textura y aspecto</li>
+                                </ol>
+                            </div>
+                            <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                                <h4 class="font-semibold text-blue-800 mb-2">Preguntas de análisis:</h4>
+                                <ul class="list-disc ml-6 text-slate-700">
+                                    <li>¿En cuál solución entró agua?</li>
+                                    <li>¿En cuál salió?</li>
+                                    <li>¿Cuál se aproxima a la condición isotónica?</li>
+                                    <li>¿Cómo se relaciona el resultado con el riego y la salinidad de la rizosfera?</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actividad 2 -->
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-blue-700 mb-4">🔬 Actividad 2: Plasmólisis en epidermis de cebolla</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-blue-800 mb-2">Propósito:</h4>
+                                <p class="text-slate-700">Reconocer la retracción del protoplasto cuando el tejido se coloca en una solución hipertónica. Elaborar un dibujo científico con pared celular, membrana y protoplasto. Si se dispone de microscopio, comparar agua destilada con una solución salina.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-blue-800 mb-2">Materiales:</h4>
+                                <ul class="list-disc ml-6 text-slate-700">
+                                    <li>Epidermis de cebolla</li>
+                                    <li>Microscopio (opcional)</li>
+                                    <li>Portaobjetos y cubreobjetos</li>
+                                    <li>Agua destilada</li>
+                                    <li>Solución salina concentrada</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actividad 3 -->
+                    <div class="bg-white border-l-4 border-purple-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-purple-700 mb-4">🌾 Actividad 3: Estudio de caso agronómico</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-purple-800 mb-2">Situación:</h4>
+                                <p class="text-slate-700">Analizar una parcela con hojas quemadas, crecimiento reducido y agua de riego con alta conductividad eléctrica.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-purple-800 mb-2">Tareas:</h4>
+                                <ul class="list-disc ml-6 text-slate-700">
+                                    <li>Proponer tres hipótesis celulares</li>
+                                    <li>Seleccionar cuatro mediciones</li>
+                                    <li>Recomendar dos acciones de manejo</li>
+                                </ul>
+                            </div>
+                            <div class="bg-purple-50 border border-purple-200 p-4 rounded-lg">
+                                <h4 class="font-semibold text-purple-800 mb-2">Requisito:</h4>
+                                <p class="text-slate-700">La explicación debe diferenciar estrés osmótico, toxicidad iónica y deficiencia nutricional.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Juegos Interactivos -->
+            <div id="juegos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Juegos Interactivos</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="juegos">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-juegos" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-juegos" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <!-- Sopa de Letras -->
+                    <div class="bg-white border-l-4 border-green-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-4">🔍 Sopa de Letras: Membrana Plasmática</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Encuentra las siguientes palabras relacionadas con la membrana plasmática:</p>
+
+                        <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded">
+                            <p class="font-semibold text-green-800 mb-2">Palabras a buscar:</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">MEMBRANA</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">OSMOSIS</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">TRANSPORTE</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">TURGENCIA</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">ACUAPORINA</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">PLASMOLISIS</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">DIFUSION</span>
+                                <span class="bg-white px-3 py-1 rounded border border-green-300 text-sm">BOMBA</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="grid grid-cols-10 gap-1 text-center font-mono text-sm max-w-4xl mx-auto" style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr));">
+                                <!-- Fila 0 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="0">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="1">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="2">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="3">B</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="4">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="5">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="6">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="7">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="8">X</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="0" data-col="9">Q</div>
+                                
+                                <!-- Fila 1 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="0">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="1">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="2">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="3">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="4">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="5">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="6">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="7">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="8">X</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="1" data-col="9">Y</div>
+                                
+                                <!-- Fila 2 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="0">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="1">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="2">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="3">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="4">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="5">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="6">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="7">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="8">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="2" data-col="9">E</div>
+                                
+                                <!-- Fila 3 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="0">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="1">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="2">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="3">G</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="4">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="5">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="6">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="7">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="8">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="3" data-col="9">S</div>
+                                
+                                <!-- Fila 4 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="0">D</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="1">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="2">F</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="3">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="4">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="5">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="6">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="7">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="8">X</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="4" data-col="9">Y</div>
+                                
+                                <!-- Fila 5 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="0">B</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="1">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="2">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="3">B</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="4">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="5">X</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="6">Y</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="7">Z</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="8">W</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="5" data-col="9">V</div>
+                                
+                                <!-- Fila 6 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="0">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="1">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="2">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="3">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="4">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="5">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="6">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="7">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="8">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="6" data-col="9">I</div>
+                                
+                                <!-- Fila 7 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="0">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="1">C</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="2">U</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="3">A</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="4">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="5">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="6">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="7">I</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="8">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="7" data-col="9">A</div>
+                                
+                                <!-- Fila 8 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="0">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="1">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="2">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="3">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="4">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="5">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="6">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="7">R</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="8">E</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="8" data-col="9">M</div>
+                                
+                                <!-- Fila 9 -->
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="0">P</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="1">Q</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="2">K</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="3">L</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="4">M</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="5">N</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="6">T</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="7">O</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="8">S</div>
+                                <div class="word-cell w-10 h-10 bg-white border border-gray-300 flex items-center justify-center cursor-pointer hover:bg-green-50 select-none" data-row="9" data-col="9">P</div>
+                            
+                        </div>
+                    </div>
+
+                    <!-- Juego del Ahorcado -->
+                    <div class="bg-white border-l-4 border-blue-500 rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-bold text-green-700 mb-4">🎯 Juego del Ahorcado: Membrana Plasmática</h3>
+                        <p class="mb-4"><span class="font-semibold">Instrucciones:</span> Adivina la palabra relacionada con la membrana plasmática letra por letra.</p>
+                        
+                        <div class="mb-6">
+                            <div class="text-center mb-4">
+                                <div class="inline-block p-4 bg-gray-50 rounded-lg">
+                                    <svg width="200" height="250" viewBox="0 0 200 250" class="mx-auto">
+                                        <!-- Base del ahorcado -->
+                                        <line x1="20" y1="230" x2="100" y2="230" stroke="#374151" stroke-width="4"/>
+                                        <line x1="60" y1="230" x2="60" y2="20" stroke="#374151" stroke-width="4"/>
+                                        <line x1="60" y1="20" x2="150" y2="20" stroke="#374151" stroke-width="4"/>
+                                        <line x1="150" y1="20" x2="150" y2="50" stroke="#374151" stroke-width="4"/>
+                                        
+                                        <!-- Cabeza (aparece con 1 error) -->
+                                        <circle cx="150" cy="70" r="20" stroke="#EF4444" stroke-width="3" fill="none" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Cuerpo (aparece con 2 errores) -->
+                                        <line x1="150" y1="90" x2="150" y2="140" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Brazo izquierdo (aparece con 3 errores) -->
+                                        <line x1="150" y1="100" x2="120" y2="120" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Brazo derecho (aparece con 4 errores) -->
+                                        <line x1="150" y1="100" x2="180" y2="120" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Pierna izquierda (aparece con 5 errores) -->
+                                        <line x1="150" y1="140" x2="120" y2="180" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                        
+                                        <!-- Pierna derecha (aparece con 6 errores) -->
+                                        <line x1="150" y1="140" x2="180" y2="180" stroke="#EF4444" stroke-width="3" class="hangman-part" style="display:none;"/>
+                                    </svg>
+                                </div>
+                            
+
+                            <div class="text-center mb-4">
+                                <div class="text-3xl font-mono font-bold text-green-800 mb-2" id="word-display">
+                                    _ _ _ _ _ _ _ _ _
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    Errores: <span id="error-count" class="font-bold text-red-600">0</span> / 6
+                                </div>
+                            
+
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600 mb-2">Letras usadas:</p>
+                                <div id="used-letters" class="flex flex-wrap gap-2">
+                                    <!-- Las letras usadas aparecerán aquí -->
+                                </div>
+                            
+
+                            <div class="mb-4">
+                                <div class="grid grid-cols-7 gap-2 max-w-md mx-auto">
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="A">A</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="B">B</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="C">C</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="D">D</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="E">E</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="F">F</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="G">G</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="H">H</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="I">I</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="J">J</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="K">K</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="L">L</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="M">M</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="N">N</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Ñ">Ñ</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="O">O</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="P">P</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Q">Q</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="R">R</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="S">S</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="T">T</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="U">U</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="V">V</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="W">W</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="X">X</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Y">Y</button>
+                                    <button class="hangman-letter bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-3 rounded transition-colors" data-letter="Z">Z</button>
+                                </div>
+                            
+
+                            <div class="text-center">
+                                <button id="new-word-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors mr-2">
+                                    Nueva Palabra
+                                </button>
+                                <button id="reset-hangman-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded hover:bg-red-700 transition-colors">
+                                    🔄 Reiniciar Ahorcado
+                                </button>
+                            </div>
+
+                            <div id="hangman-message" class="mt-4 text-center font-bold"></div>
+                        </div>
+
+                        <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                            <p class="text-sm text-blue-800">💡 <strong>Pista:</strong> Las palabras están relacionadas con la membrana plasmática, transporte celular, ósmosis, turgencia, acuaporinas, etc.</p>
+                        </div>
+                    </div>
+
+                </div>
+                </div>
+            </div>
+
+    </div>
+    </div>
+    </div>
+    </div>
+            <!-- Evaluación -->
+            <div id="evaluacion" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Evaluación</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="evaluacion">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-evaluacion" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-evaluacion" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <p class="text-slate-600 mb-6">Seleccione o redacte la respuesta más adecuada. La evaluación combina comprensión conceptual y aplicación agronómica.</p>
+
+                    <!-- Pregunta 1 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 1: ¿Cuál es la función principal de la bicapa de fosfolípidos?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q1" value="A" class="mt-1 mr-3">
+                                <span>A) Transportar agua a través de la membrana.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q1" value="B" class="mt-1 mr-3">
+                                <span>B) Actuar como barrera selectiva entre el medio externo y el interior celular.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q1" value="C" class="mt-1 mr-3">
+                                <span>C) Generar ATP para la célula.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 2 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 2: ¿Qué tipo de transporte requiere energía en forma de ATP?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q2" value="A" class="mt-1 mr-3">
+                                <span>A) Difusión simple.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q2" value="B" class="mt-1 mr-3">
+                                <span>B) Transporte activo.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q2" value="C" class="mt-1 mr-3">
+                                <span>C) Ósmosis.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 3 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 3: ¿Qué ocurre cuando una célula vegetal se coloca en una solución hipertónica?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q3" value="A" class="mt-1 mr-3">
+                                <span>A) La célula gana agua y se hincha.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q3" value="B" class="mt-1 mr-3">
+                                <span>B) Se produce plasmólisis.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q3" value="C" class="mt-1 mr-3">
+                                <span>C) No ocurre ningún cambio.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 4 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 4: ¿Qué son las acuaporinas?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q4" value="A" class="mt-1 mr-3">
+                                <span>A) Canales de proteínas que facilitan el paso de agua.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q4" value="B" class="mt-1 mr-3">
+                                <span>B) Bombas de sodio.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q4" value="C" class="mt-1 mr-3">
+                                <span>C) Receptores de hormonas.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 5 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 5: ¿Qué es la turgencia en las células vegetales?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q5" value="A" class="mt-1 mr-3">
+                                <span>A) La presión ejercida por el contenido celular contra la pared celular.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q5" value="B" class="mt-1 mr-3">
+                                <span>B) El movimiento de agua hacia afuera de la célula.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q5" value="C" class="mt-1 mr-3">
+                                <span>C) La ruptura de la membrana plasmática.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 6 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 6: ¿Qué papel juega el sodio en la toxicidad salina?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q6" value="A" class="mt-1 mr-3">
+                                <span>A) El exceso de sodio interfiere con procesos metabólicos y causa estrés osmótico.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q6" value="B" class="mt-1 mr-3">
+                                <span>B) El sodio es esencial para la fotosíntesis.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q6" value="C" class="mt-1 mr-3">
+                                <span>C) El sodio no afecta a las plantas.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Pregunta 7 -->
+                    <div class="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 class="text-lg font-bold text-green-800 mb-4">Pregunta 7: ¿Qué es el transporte secundario?</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q7" value="A" class="mt-1 mr-3">
+                                <span>A) Usa directamente ATP para mover moléculas.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q7" value="B" class="mt-1 mr-3">
+                                <span>B) Utiliza el gradiente electroquímico creado por transporte primario.</span>
+                            </label>
+                            <label class="flex items-start p-3 bg-white rounded-lg border hover:border-green-400 cursor-pointer transition-colors">
+                                <input type="radio" name="q7" value="C" class="mt-1 mr-3">
+                                <span>C) No requiere energía.</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button id="submit-quiz-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                        Enviar Respuestas
+                    </button>
+
+                    <div id="quiz-feedback" class="mt-6 p-4 rounded-lg hidden"></div>
+                </div>
+            </div>
+
+            <!-- Recursos -->
+            <div id="recursos" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Recursos Adicionales</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="recursos">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-recursos" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-recursos" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="space-y-4">
+                        <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+                            <h3 class="font-bold text-green-800 mb-2">📚 Transporte Pasivo</h3>
+                            <p class="text-slate-700 mb-2">Artículo sobre difusión y ósmosis en células vegetales.</p>
+                            <a href="#" class="text-green-600 hover:text-green-800 font-medium">Leer más →</a>
+                        </div>
+                        <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+                            <h3 class="font-bold text-green-800 mb-2">🔬 Transportadores Vegetales</h3>
+                            <p class="text-slate-700 mb-2">Base de datos de transportadores de membrana en plantas.</p>
+                            <a href="#" class="text-green-600 hover:text-green-800 font-medium">Explorar →</a>
+                        </div>
+                        <div class="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+                            <h3 class="font-bold text-green-800 mb-2">🌾 Estrés Salino</h3>
+                            <p class="text-slate-700 mb-2">Investigaciones sobre tolerancia a la salinidad en cultivos.</p>
+                            <a href="#" class="text-green-600 hover:text-green-800 font-medium">Ver estudio →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bibliografía -->
+            <div id="bibliografia" class="content-pane">
+                <h2 class="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Bibliografía</h2>
+                <div class="speech-controls mb-4 p-3 bg-green-100 rounded-lg flex items-center justify-between flex-wrap gap-2" data-target="bibliografia">
+                    <div class="flex items-center gap-2">
+                        <button class="play-btn bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm">
+                            <span class="mr-1">▶️</span> Leer
+                        </button>
+                        <button class="pause-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏸️</span> Pausar
+                        </button>
+                        <button class="stop-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg flex items-center text-sm" disabled>
+                            <span class="mr-1">⏹️</span> Detener
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="speech-rate-bibliografia" class="text-sm text-green-800 font-medium">Velocidad:</label>
+                        <input type="range" class="speech-rate w-20" id="speech-rate-bibliografia" min="0.5" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <ul class="space-y-4 text-slate-700">
+                        <li class="p-3 bg-gray-50 rounded-lg">
+                            <strong>Taiz, L., & Zeiger, E.</strong> (2010). <em>Plant Physiology and Development</em>. Sinauer Associates.
+                        </li>
+                        <li class="p-3 bg-gray-50 rounded-lg">
+                            <strong>Raven, P. H., Evert, R. F., & Eichhorn, S. E.</strong> (2013). <em>Biology of Plants</em>. W.H. Freeman.
+                        </li>
+                        <li class="p-3 bg-gray-50 rounded-lg">
+                            <strong>Munns, R., & Tester, M.</strong> (2008). Mechanisms of salinity tolerance in annual plants. <em>Trends in Plant Science</em>, 13(11), 580-588.
+                        </li>
+                        <li class="p-3 bg-gray-50 rounded-lg">
+                            <strong>Horie, T., et al.</strong> (2009). High-affinity Na+ transporter in the plasma membrane of rice. <em>PNAS</em>, 106(19), 7687-7692.
+                        </li>
+                        <li class="p-3 bg-gray-50 rounded-lg">
+                            <strong>Sasaki, T., et al.</strong> (2002). A wheat gene encoding an aluminum-activated malate transporter. <em>Plant Journal</em>, 32(4), 639-648.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de imágenes -->
+    <div id="imageModal" class="image-modal">
+        <div class="modal-content">
+            <button class="close-modal">×</button>
+            <img id="modalImage" src="" alt="Imagen ampliada">
+        </div>
+    </div>
+
+    <script>
+        // Síntesis de voz
+        let synth = window.speechSynthesis;
+        let voices = [];
+        let currentUtterance = null;
+        let currentSection = null;
+        let isPaused = false;
+
+        // Cargar voces
+        function loadVoices() {
+            voices = synth.getVoices();
+        }
+
+        loadVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        function getSectionText(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (!section) return '';
+            
+            const excludeSelectors = ['.speech-controls', 'button', 'input', 'select', '.accordion-btn'];
+            const clone = section.cloneNode(true);
+            
+            excludeSelectors.forEach(selector => {
+                clone.querySelectorAll(selector).forEach(el => el.remove());
+            });
+            
+            return clone.innerText || clone.textContent;
+        }
+
+        function playSection(sectionId) {
+            const text = getSectionText(sectionId);
+            if (!text.trim()) return;
+            
+            stopAllSections();
+            
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentSection = sectionId;
+            isPaused = false;
+            
+            const rateInput = document.getElementById('speech-rate-' + sectionId);
+            if (rateInput) {
+                currentUtterance.rate = parseFloat(rateInput.value);
+            }
+            
+            currentUtterance.lang = 'es-ES';
+            synth.speak(currentUtterance);
+            
+            currentUtterance.onend = function() {
+                currentUtterance = null;
+                currentSection = null;
+            };
+            
+            updatePlayButtons(sectionId, true);
+        }
+
+        function pauseSection() {
+            if (synth.speaking && !synth.paused) {
+                synth.pause();
+                isPaused = true;
+            }
+        }
+
+        function resumeSection() {
+            if (synth.paused) {
+                synth.resume();
+                isPaused = false;
+            }
+        }
+
+        function stopAllSections() {
+            if (synth.speaking) {
+                synth.cancel();
+            }
+            currentUtterance = null;
+            currentSection = null;
+            isPaused = false;
+            
+            document.querySelectorAll('.play-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+            document.querySelectorAll('.pause-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+            document.querySelectorAll('.stop-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+
+        function updatePlayButtons(sectionId, isPlaying) {
+            const control = document.querySelector(`[data-target="${sectionId}"]`);
+            if (control) {
+                const playBtn = control.querySelector('.play-btn');
+                const pauseBtn = control.querySelector('.pause-btn');
+                const stopBtn = control.querySelector('.stop-btn');
+                
+                if (playBtn) playBtn.disabled = isPlaying;
+                if (pauseBtn) pauseBtn.disabled = !isPlaying;
+                if (stopBtn) stopBtn.disabled = !isPlaying;
+            }
+        }
+
+        // Navegación entre secciones y demás funcionalidades
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const contentPanes = document.querySelectorAll('.content-pane');
+            const mobileNav = document.getElementById('mobile-nav');
+            
+            function showSection(targetId) {
+                contentPanes.forEach(pane => {
+                    pane.classList.remove('active');
+                });
+                
+                const targetPane = document.getElementById(targetId);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                }
+                
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('data-target') === targetId) {
+                        link.classList.add('active');
+                    }
+                });
+                
+                if (mobileNav) {
+                    mobileNav.value = targetId;
+                }
+                
+                stopAllSections();
+            }
+            
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-target');
+                    showSection(targetId);
+                });
+            });
+            
+            if (mobileNav) {
+                mobileNav.addEventListener('change', function() {
+                    showSection(this.value);
+                });
+            }
+            
+            showSection('introduccion');
+            
+            // Event listeners para controles de voz
+            document.querySelectorAll('.speech-controls').forEach(control => {
+                const sectionId = control.getAttribute('data-target');
+                const playBtn = control.querySelector('.play-btn');
+                const pauseBtn = control.querySelector('.pause-btn');
+                const stopBtn = control.querySelector('.stop-btn');
+                const rateInput = control.querySelector('.speech-rate');
+                
+                if (playBtn) {
+                    playBtn.addEventListener('click', () => {
+                        if (isPaused) {
+                            resumeSection();
+                        } else {
+                            playSection(sectionId);
+                        }
+                    });
+                }
+                
+                if (pauseBtn) {
+                    pauseBtn.addEventListener('click', pauseSection);
+                }
+                
+                if (stopBtn) {
+                    stopBtn.addEventListener('click', stopAllSections);
+                }
+                
+                if (rateInput) {
+                    rateInput.addEventListener('input', function() {
+                        if (currentUtterance && currentSection === sectionId) {
+                            synth.cancel();
+                            playSection(sectionId);
+                        }
+                    });
+                }
+            });
+            
+            // Acordeones
+            const accordionBtns = document.querySelectorAll('.accordion-btn');
+            accordionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const panel = document.querySelector(targetId);
+                    const icon = this.querySelector('span:last-child');
+                    
+                    if (panel) {
+                        panel.classList.toggle('hidden');
+                        if (icon) {
+                            icon.textContent = panel.classList.contains('hidden') ? '➕' : '➖';
+                        }
+                    }
+                });
+            });
+            
+            // Sopa de letras
+            const wordCells = document.querySelectorAll('.word-cell');
+            const foundWordsContainer = document.getElementById('found-words');
+            if (wordCells.length > 0) {
+                let isSelecting = false;
+                let selectedCells = [];
+                let foundWords = new Set();
+                
+                const wordsToFind = ['MEMBRANA', 'OSMOSIS', 'TRANSPORTE', 'TURGENCIA', 'ACUAPORINA', 'PLASMOLISIS', 'DIFUSION', 'BOMBA'];
+                const wordPositions = {
+                    'MEMBRANA': [[0,0], [0,1], [0,2], [0,3], [0,4], [0,5], [0,6], [0,7]],
+                    'OSMOSIS': [[1,0], [1,1], [1,2], [1,3], [1,4], [1,5], [1,6]],
+                    'TRANSPORTE': [[2,0], [2,1], [2,2], [2,3], [2,4], [2,5], [2,6], [2,7], [2,8], [2,9]],
+                    'TURGENCIA': [[3,0], [3,1], [3,2], [3,3], [3,4], [3,5], [3,6], [3,7], [3,8]],
+                    'DIFUSION': [[4,0], [4,1], [4,2], [4,3], [4,4], [4,5], [4,6], [4,7]],
+                    'BOMBA': [[5,0], [5,1], [5,2], [5,3], [5,4]],
+                    'PLASMOLISIS': [[6,0], [6,1], [6,2], [6,3], [6,4], [6,5], [6,6], [6,7], [6,8], [6,9], [6,10]],
+                    'ACUAPORINA': [[7,0], [7,1], [7,2], [7,3], [7,4], [7,5], [7,6], [7,7], [7,8], [7,9]]
+                };
+                
+                wordCells.forEach(cell => {
+                    cell.addEventListener('mousedown', () => {
+                        isSelecting = true;
+                        selectedCells = [cell];
+                        cell.classList.add('bg-green-300');
+                    });
+                    
+                    cell.addEventListener('mouseenter', () => {
+                        if (isSelecting) {
+                            selectedCells.push(cell);
+                            cell.classList.add('bg-green-300');
+                        }
+                    });
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    if (isSelecting) {
+                        isSelecting = false;
+                        checkSelectedWord();
+                        selectedCells.forEach(cell => {
+                            cell.classList.remove('bg-green-300');
+                        });
+                        selectedCells = [];
+                    }
+                });
+                
+                function checkSelectedWord() {
+                    const selectedWord = selectedCells.map(cell => cell.textContent).join('');
+                    if (wordsToFind.includes(selectedWord) && !foundWords.has(selectedWord)) {
+                        foundWords.add(selectedWord);
+                        const positions = wordPositions[selectedWord];
+                        positions.forEach(([row, col]) => {
+                            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                            if (cell) {
+                                cell.classList.add('bg-green-500', 'text-white', 'found');
+                                cell.classList.remove('bg-green-200');
+                            }
+                        });
+                        const wordBadge = document.createElement('span');
+                        wordBadge.className = 'bg-green-500 text-white px-3 py-1 rounded text-sm';
+                        wordBadge.textContent = selectedWord;
+                        foundWordsContainer.appendChild(wordBadge);
+                    }
+                }
+            }
+            
+            // Ahorcado
+            const wordDisplay = document.getElementById('word-display');
+            if (wordDisplay) {
+                const words = ['MEMBRANA', 'OSMOSIS', 'DIFUSION', 'TRANSPORTE', 'TURGENCIA', 'ACUAPORINA', 'PLASMOLISIS', 'BOMBA', 'FOSFOLIPIDO', 'PROTEINA', 'SELECTIVIDAD', 'GRADIENTE'];
+                let currentWord = '';
+                let guessedLetters = [];
+                let errors = 0;
+                const maxErrors = 6;
+                
+                const errorCount = document.getElementById('error-count');
+                const usedLetters = document.getElementById('used-letters');
+                const message = document.getElementById('hangman-message');
+                const newWordBtn = document.getElementById('new-word-btn');
+                const resetHangmanBtn = document.getElementById('reset-hangman-btn');
+                const letterButtons = document.querySelectorAll('.hangman-letter');
+                const hangmanParts = document.querySelectorAll('.hangman-part');
+                
+                function initGame() {
+                    currentWord = words[Math.floor(Math.random() * words.length)];
+                    guessedLetters = [];
+                    errors = 0;
+                    updateDisplay();
+                    updateErrors();
+                    usedLetters.innerHTML = '';
+                    message.textContent = '';
+                    letterButtons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.classList.remove('bg-gray-300', 'text-gray-500');
+                        btn.classList.add('bg-green-100', 'hover:bg-green-200', 'text-green-800');
+                    });
+                    hangmanParts.forEach(part => {
+                        part.style.display = 'none';
+                    });
+                }
+                
+                function updateDisplay() {
+                    const display = currentWord.split('').map(letter => 
+                        guessedLetters.includes(letter) ? letter : '_'
+                    ).join(' ');
+                    wordDisplay.textContent = display;
+                }
+                
+                function updateErrors() {
+                    errorCount.textContent = errors;
+                    hangmanParts.forEach((part, index) => {
+                        part.style.display = index < errors ? 'block' : 'none';
+                    });
+                }
+                
+                function checkWin() {
+                    return currentWord.split('').every(letter => guessedLetters.includes(letter));
+                }
+                
+                function disableAllLetters() {
+                    letterButtons.forEach(btn => {
+                        btn.disabled = true;
+                        btn.classList.remove('bg-green-100', 'hover:bg-green-200', 'text-green-800');
+                        btn.classList.add('bg-gray-300', 'text-gray-500');
+                    });
+                }
+                
+                letterButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const letter = this.getAttribute('data-letter');
+                        if (guessedLetters.includes(letter) || this.disabled) return;
+                        
+                        guessedLetters.push(letter);
+                        this.disabled = true;
+                        
+                        const usedLetter = document.createElement('span');
+                        usedLetter.className = 'bg-gray-200 px-2 py-1 rounded text-sm';
+                        usedLetter.textContent = letter;
+                        usedLetters.appendChild(usedLetter);
+                        
+                        if (currentWord.includes(letter)) {
+                            updateDisplay();
+                            if (checkWin()) {
+                                message.textContent = '¡Ganaste! 🎉';
+                                message.className = 'mt-4 text-center font-bold text-green-600';
+                                disableAllLetters();
+                            }
+                        } else {
+                            errors++;
+                            updateErrors();
+                            if (errors >= maxErrors) {
+                                message.textContent = '¡Perdiste! La palabra era: ' + currentWord;
+                                message.className = 'mt-4 text-center font-bold text-red-600';
+                                disableAllLetters();
+                                wordDisplay.textContent = currentWord.split('').join(' ');
+                            }
+                        }
+                    });
+                });
+                
+                newWordBtn.addEventListener('click', initGame);
+                resetHangmanBtn.addEventListener('click', initGame);
+                initGame();
+            }
+            
+            // Evaluación
+            const submitBtn = document.getElementById('submit-quiz-btn');
+            const feedback = document.getElementById('quiz-feedback');
+            if (submitBtn && feedback) {
+                submitBtn.addEventListener('click', function() {
+                    const correctAnswers = {
+                        'q1': 'B',
+                        'q2': 'B',
+                        'q3': 'B',
+                        'q4': 'A',
+                        'q5': 'A',
+                        'q6': 'A',
+                        'q7': 'B'
+                    };
+                    
+                    let score = 0;
+                    let total = Object.keys(correctAnswers).length;
+                    
+                    for (let q in correctAnswers) {
+                        const selected = document.querySelector(`input[name="${q}"]:checked`);
+                        if (selected && selected.value === correctAnswers[q]) {
+                            score++;
+                        }
+                    }
+                    
+                    const percentage = (score / total) * 100;
+                    feedback.classList.remove('hidden');
+                    
+                    if (percentage >= 70) {
+                        feedback.className = 'mt-6 p-4 rounded-lg bg-green-100 border border-green-500';
+                        feedback.innerHTML = `<strong>¡Excelente!</strong> Obtuviste ${score}/${total} (${percentage}%) respuestas correctas.`;
+                    } else if (percentage >= 50) {
+                        feedback.className = 'mt-6 p-4 rounded-lg bg-yellow-100 border border-yellow-500';
+                        feedback.innerHTML = `<strong>Buen trabajo.</strong> Obtuviste ${score}/${total} (${percentage}%) respuestas correctas. Revisa el contenido.`;
+                    } else {
+                        feedback.className = 'mt-6 p-4 rounded-lg bg-red-100 border border-red-500';
+                        feedback.innerHTML = `<strong>Necesitas estudiar más.</strong> Obtuviste ${score}/${total} (${percentage}%) respuestas correctas.`;
+                    }
+                });
+            }
+            
+            // Atajos de teclado
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    if (isPaused) {
+                        resumeSection();
+                    } else if (synth.speaking) {
+                        pauseSection();
+                    } else if (currentSection) {
+                        playSection(currentSection);
+                    }
+                } else if (e.code === 'Tab') {
+                    e.preventDefault();
+                    stopAllSections();
+                }
+            });
+            
+            // Modal de imágenes
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            const closeBtn = document.querySelector('.close-modal');
+            
+            document.querySelectorAll('.expand-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const img = this.parentElement.querySelector('img');
+                    if (img && modal && modalImg) {
+                        modalImg.src = img.src;
+                        modal.classList.add('active');
+                    }
+                });
+            });
+            
+            if (closeBtn && modal) {
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                });
+                
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
